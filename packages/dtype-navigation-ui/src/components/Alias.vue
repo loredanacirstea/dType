@@ -23,6 +23,7 @@
         <component
           :is="dynamicComponent"
           v-model="dynamicComponentData"
+          :dtypeAbi="dtypeAbi"
           :addition="selectedAlias"
           :getAliasData="getAliasData"
           @save="saveResource"
@@ -35,7 +36,7 @@
 <script>
 import Vue from 'vue';
 import {mapState} from 'vuex';
-import {getDataItemByTypeHash} from '@dtype/core';
+import {getDataItemByTypeHash, buildStructAbi} from '@dtype/core';
 import {TYPE_PREVIEW, getUIPackage} from '../utils.js';
 
 import AliasSelector from './AliasSelector';
@@ -55,6 +56,7 @@ export default {
     selectedAlias: null,
     aliasData: null,
     dtypeData: null,
+    dtypeAbi: {},
     dynamicPackage: null,
     dynamicComponent: null,
     dynamicComponentData: null,
@@ -89,6 +91,15 @@ export default {
     },
     aliasData() {
       this.dynamicComponentData = this.aliasData;
+    },
+    dtypeData() {
+      buildStructAbi(
+        this.$store.state.dtype.contract,
+        this.dtypeData.typeHash,
+        this.dtypeData.name,
+      ).then((abi) => {
+        this.dtypeAbi = abi;
+      });
     },
   },
   methods: {
