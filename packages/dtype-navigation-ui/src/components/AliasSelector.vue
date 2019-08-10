@@ -57,9 +57,9 @@
 </template>
 
 <script>
-import {createNamespacedHelpers} from 'vuex'
+import {createNamespacedHelpers} from 'vuex';
 
-const {mapState, mapActions} = createNamespacedHelpers('alias');
+const {mapState} = createNamespacedHelpers('alias');
 
 export default {
   name: 'AliasSelector',
