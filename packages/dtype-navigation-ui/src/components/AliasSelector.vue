@@ -1,6 +1,6 @@
 <template>
   <v-layout row wrap>
-    <v-flex xs4 style="padding-right: 10px;">
+    <v-flex xs3 style="padding-right: 10px;">
       <v-autocomplete
         v-model="selectType"
         label="type alias"
@@ -23,7 +23,7 @@
         class="font-weight-bold display-1 text-center"
       ></v-select>
     </v-flex>
-    <v-flex xs4 style="padding-left: 10px;">
+    <v-flex xs3 style="padding-left: 10px;">
       <v-autocomplete
         v-model="selectItem"
         label="resource alias"
@@ -36,6 +36,19 @@
         dense
       ></v-autocomplete>
     </v-flex>
+    <!-- <v-flex xs3 style="padding-left: 10px;" v-if="">
+      <v-autocomplete
+        v-model="selectProp"
+        label="resource alias"
+        :items="selectType ? Object.keys(aliases[selectType][selectSeparator]) : []"
+        :loading="loadingItems"
+        :search-input.sync="searchItem"
+        hide-no-data
+        hide-details
+        placeholder="Search"
+        dense
+      ></v-autocomplete>
+    </v-flex> -->
     <v-flex xs2>
       <v-btn
         icon
@@ -63,7 +76,7 @@ const {mapState} = createNamespacedHelpers('alias');
 
 export default {
   name: 'AliasSelector',
-  props: ['linkbtn', 'initial'],
+  props: ['linkbtn', 'initial', 'getAliasData'],
   data: () => ({
     selectType: null,
     searchType: null,
@@ -72,6 +85,7 @@ export default {
     searchItem: null,
     loadingItems: false,
     selectSeparator: '.',
+    selectedProps: [],
   }),
   computed: {
     ...mapState(['alias', 'aliases']),
@@ -93,6 +107,14 @@ export default {
     aliases() {
       console.log('watch aliases', this.aliases);
     },
+    selectItem() {
+      if (!this.selectItem) return;
+      const alias = this.buildAlias();
+      console.log('buildAlias', alias);
+      this.getAliasData(alias.alias).then(({content}) => {
+        this.selectedProps = 
+      });
+    },
   },
   methods: {
     setData() {
@@ -112,13 +134,18 @@ export default {
       [this.selectType, this.selectItem] = parts;
     },
     onGo(type) {
+      const alias = this.buildAlias();
+      alias.type = type;
+      this.$emit('alias', alias);
+    },
+    buildAlias() {
       const alias = this.selectType + this.selectSeparator + this.selectItem;
       const components = [
         {name: this.selectType, identifier: this.aliases[this.selectType], type: 'dtype'},
         {name: this.selectSeparator, type: 'separator'},
         {name: this.selectItem, identifier: this.aliases[this.selectType][this.selectSeparator][this.selectItem], type: 'item'},
       ];
-      this.$emit('alias', {alias, components, type});
+      return {alias, components};
     },
   },
 };

@@ -5,6 +5,7 @@
         <AliasSelector
           :initial="viewer ? domain : null"
           :linkbtn="viewer ? false : true"
+          :getAliasData="getAliasData"
           @alias="setAlias"
         />
       </v-flex>
