@@ -19,14 +19,16 @@
           <v-card-text v-if="editedItem">
             <v-container grid-list-md>
               <v-layout wrap>
-                <template v-for="header in headers">
+                <template v-for="(header, key) in headers">
                   <v-flex xs12
                     v-if="header.value === 'types' || header.value === 'optionals' || header.value === 'outputs'"
+                    :key="key"
                   >
                     <v-layout row wrap>
                       <dTypeTypeEdit
                         v-for="(type, i) in editedItem[header.value]"
                         :type="type"
+                        :key="`${key}_${i}`"
                         v-on:change="onChangedType(header.value, $event, i)"
                         v-on:remove="onRemovedType(header.value,type, i)"
                       />
@@ -101,8 +103,8 @@
       :pagination.sync="paginationBrowse"
     >
       <template v-slot:items='props'>
-        <template v-for="header in headers">
-          <td class='text-xs-left'>
+        <template v-for="(header, i) in headers">
+          <td class='text-xs-left' :key="i">
             <dTypeBrowseField
               :type="header.type"
               :value="props.item[header.value]"
@@ -222,24 +224,24 @@ export default {
             let dtype = this.$store.state.dtype.dtypes.find(dtype => dtype.name === header.type.name);
 
             if (
-              dtype &&
-              dtype.types.length &&
-              ['types', 'optionals', 'outputs'].indexOf(key) === -1
+              dtype
+              && dtype.types.length
+              && ['types', 'optionals', 'outputs'].indexOf(key) === -1
             ) {
               item[key] = JSON.stringify(item[key]);
             }
           }
         });
       if (item.types) {
-        item.types = item.types.map(type => {
+        item.types = item.types.map((type) => {
           type.dimensions = JSON.stringify(type.dimensions);
           return type;
         });
-        item.optionals = item.optionals.map(type => {
+        item.optionals = item.optionals.map((type) => {
           type.dimensions = JSON.stringify(type.dimensions);
           return type;
         });
-        item.outputs = item.outputs.map(type => {
+        item.outputs = item.outputs.map((type) => {
           type.dimensions = JSON.stringify(type.dimensions);
           return type;
         });
@@ -249,7 +251,7 @@ export default {
       this.dialog = true;
     },
     deleteItem(item) {
-      const index = this.items.indexOf(item)
+      const index = this.items.indexOf(item);
       confirm('Are you sure you want to delete this item?') && this.delete(item);
     },
     close() {
@@ -257,7 +259,7 @@ export default {
       setTimeout(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
         this.editedIndex = -1;
-      }, 300)
+      }, 300);
     },
     save() {
       this.headers.forEach((header) => {
@@ -266,24 +268,23 @@ export default {
           if (typeof this.editedItem[header.value] === 'string') {
             this.editedItem[header.value] = JSON.parse(this.editedItem[header.value]);
           }
-        }// else {
-          let dtype = this.$store.state.dtype.dtypes.find(dtype => dtype.name === header.type.name);
+        }
+        const dtype = this.$store.state.dtype.dtypes.find(dtype => dtype.name === header.type.name);
 
-          if (dtype && dtype.types.length && typeof this.editedItem[header.value] == 'string') {
-            this.editedItem[header.value] = JSON.parse(this.editedItem[header.value]);
-          }
-        //}
+        if (dtype && dtype.types.length && typeof this.editedItem[header.value] == 'string') {
+          this.editedItem[header.value] = JSON.parse(this.editedItem[header.value]);
+        }
       });
       if (this.editedItem.types) {
-        this.editedItem.types = this.editedItem.types.map(type => {
+        this.editedItem.types = this.editedItem.types.map((type) => {
           type.dimensions = JSON.parse(type.dimensions);
           return type;
         });
-        this.editedItem.optionals = this.editedItem.optionals.map(type => {
+        this.editedItem.optionals = this.editedItem.optionals.map((type) => {
           type.dimensions = JSON.parse(type.dimensions);
           return type;
         });
-        this.editedItem.outputs = this.editedItem.outputs.map(type => {
+        this.editedItem.outputs = this.editedItem.outputs.map((type) => {
           type.dimensions = JSON.parse(type.dimensions);
           return type;
         });

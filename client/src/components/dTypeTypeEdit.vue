@@ -6,9 +6,8 @@
         <v-icon @click="onRemove()">close</v-icon>
       </v-btn>
     </v-flex>
-    <v-flex xs12 v-for='key in Object.keys(changedType)'>
+    <v-flex xs12 v-for='(key, i) in Object.keys(changedType)' :key="i">
       <v-text-field
-        :key="key"
         :value='changedType[key]'
         :label='key'
         :readonly='key == "name" ? true : false'
@@ -26,7 +25,7 @@ export default {
   data() {
     return {
       changedType: Object.assign({}, this.type),
-    }
+    };
   },
   updated: {
     type() {
