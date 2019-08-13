@@ -30,14 +30,33 @@
         ></component>
       </v-flex>
     </v-layout>
+    <v-layout row wrap justify-end v-if="updateDialog">
+      <v-flex shrink>
+        <v-btn
+          icon
+          @click="saveResource(true, updateDialogdtypeData, updateDialogValue, updateDialogAliasData)"
+        >
+          <v-icon>fa-save</v-icon>
+        </v-btn>
+      </v-flex>
+      <v-flex xs12>
+        <component
+          :is="updateDialogDynamicComponent"
+          v-model="updateDialogValue"
+          :dtypeAbi="updateDialogAbi"
+          :getAliasData="getAliasData"
+        ></component>
+      </v-flex>
+    </v-layout>
   </v-container>
 </template>
 
 <script>
-import Vue from 'vue';
+// import Vue from 'vue';
 import {mapState} from 'vuex';
 import {getDataItemByTypeHash, buildStructAbi} from '@dtype/core';
-import {TYPE_PREVIEW, getUIPackage} from '../utils.js';
+import {DefaultEdit} from '@dtype/default-ui';
+import {TYPE_PREVIEW, getUIPackage, getDynamicPackageInternal, setDynamicComponent} from '../utils.js';
 
 import AliasSelector from './AliasSelector';
 
@@ -49,6 +68,7 @@ export default {
   props: ['query'],
   components: {
     AliasSelector,
+    DefaultEdit,
   },
   data: () => ({
     viewer: true,
@@ -60,6 +80,13 @@ export default {
     dynamicPackage: null,
     dynamicComponent: null,
     dynamicComponentData: null,
+    updateDialogDynamicComponent: null,
+    updateDialog: false,
+    updateDialogValueAlias: null,
+    updateDialogValue: null,
+    updateDialogAliasData: null,
+    updateDialogdtypeData: null,
+    updateDialogAbi: null,
   }),
   computed: mapState('alias', {
     alias: 'alias',
@@ -67,6 +94,25 @@ export default {
   mounted() {
     if (this.query) {
       this.setAliasData(this.query.alias);
+    }
+    window.updateTypeData = async (alias) => {
+      console.log('updateTypeData', alias);
+      const {content, dtypeData} = await this.getAliasData(alias);
+      this.updateDialogValue = content;
+      this.updateDialogValueAlias = alias;
+      this.updateDialogAliasData = content;
+      this.updateDialogdtypeData = dtypeData;
+      this.updateDialogAbi = await buildStructAbi(
+        this.$store.state.dtype.contract,
+        dtypeData.typeHash,
+        dtypeData.name,
+      );
+      const {uiPackage, component} = await this.getDynamicPackageInternal(
+        dtypeData.name,
+        'edit',
+      );
+      this.updateDialogDynamicComponent = component.name;
+      this.updateDialog = true;
     }
   },
   watch: {
@@ -85,14 +131,16 @@ export default {
         this.$router.push({path: 'alias', query: {alias: this.selectedAlias.alias}});
       }
     },
-    viewer() {
+    viewer(oldviewer, newviewer) {
       if (!this.dynamicPackage) return;
-      this.setDynamicComponent();
+      const component = setDynamicComponent(this.dynamicPackage, this.viewer ? 'view' : 'edit');
+      this.dynamicComponent = component.name;
     },
     aliasData() {
       this.dynamicComponentData = this.aliasData;
     },
     dtypeData() {
+      console.log('dtypeData', this.dtypeData);
       buildStructAbi(
         this.$store.state.dtype.contract,
         this.dtypeData.typeHash,
@@ -133,15 +181,26 @@ export default {
       );
       return {content, dtypeData};
     },
-    saveResource() {
-      this.$store.dispatch('alias/saveResource', {dTypeData: this.dtypeData, data: this.dynamicComponentData, identifier: this.aliasData.typeHash}).then((newidentifier) => {
-        this.changeAlias(newidentifier);
+    saveResource(dataSet, dtypeData, data, aliasData) {
+      console.log('saveResource', dataSet, dtypeData, data, aliasData, aliasData? aliasData.typeHash : null);
+      this.$store.dispatch('alias/saveResource', {
+        dTypeData: dataSet === true ? dtypeData : this.dtypeData,
+        data: dataSet === true ? data : this.dynamicComponentData,
+        identifier: dataSet === true ? aliasData.typeHash : this.aliasData.typeHash,
+      }).then((newidentifier) => {
+        console.log('newidentifier', newidentifier);
+        if (dataSet) {
+          this.changeAlias(newidentifier, this.updateDialogValueAlias, dtypeData);
+        } else {
+          this.changeAlias(newidentifier);
+        }
+        this.updateDialog = false;
       });
     },
-    changeAlias(identifier) {
-      const parts = this.domain.split('.');
+    changeAlias(identifier, domain, dtypeData) {
+      const parts = (domain || this.domain).split('.');
       this.$store.dispatch('alias/setAlias', {
-        dTypeIdentifier: this.dtypeData.typeHash,
+        dTypeIdentifier: (dtypeData || this.dtypeData).typeHash,
         separator: '.',
         name: parts[1],
         identifier,
@@ -154,24 +213,51 @@ export default {
       return '';
     },
     async setDynamicPackage() {
-      let uiPackage = await getUIPackage(this.dtypeData.name);
+      // let uiPackage = await getUIPackage(this.dtypeData.name);
+      //
+      // if (!uiPackage) {
+      //   uiPackage = await getUIPackage('default');
+      // }
+      //
+      // this.dynamicPackage = uiPackage;
+      //
+      // this.setDynamicComponent();
 
-      if (!uiPackage) {
-        uiPackage = await getUIPackage('default');
-      }
-
+      const {uiPackage, component} = await this.getDynamicPackageInternal(
+        this.dtypeData.name,
+        this.viewer ? 'view' : 'edit',
+      );
       this.dynamicPackage = uiPackage;
-
-      this.setDynamicComponent();
-    },
-    setDynamicComponent() {
-      const {getComponent} = this.dynamicPackage;
-      const componentType = this.viewer ? 'view' : 'edit';
-      const component = getComponent(componentType);
-      console.log('componentName', component.name, component);
-      Vue.component(component.name, component);
       this.dynamicComponent = component.name;
     },
+    // setDynamicComponent() {
+    //   const {getComponent} = this.dynamicPackage;
+    //   const componentType = this.viewer ? 'view' : 'edit';
+    //   const component = getComponent(componentType);
+    //   console.log('componentName', component.name, component);
+    //   Vue.component(component.name, component);
+    //   this.dynamicComponent = component.name;
+    // },
+    async getDynamicPackageInternal(dtypeName, componentType) {
+      // let uiPackage = await getUIPackage(dtypeName);
+      //
+      // if (!uiPackage) {
+      //   uiPackage = await getUIPackage('default');
+      // }
+      //
+      // const component = this.setDynamicComponent(uiPackage, componentType);
+      //
+      // return {uiPackage, component};
+      return getDynamicPackageInternal(dtypeName, componentType);
+    },
+    // setDynamicComponent(uiPackage, componentType) {
+    //   console.log('setDynamicComponent', uiPackage, componentType);
+    //   const {getComponent} = uiPackage;
+    //   const component = getComponent(componentType);
+    //   console.log('componentName', component.name, component);
+    //   Vue.component(component.name, component);
+    //   return component;
+    // },
   },
 };
 </script>

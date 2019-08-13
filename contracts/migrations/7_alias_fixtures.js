@@ -6,15 +6,19 @@ const MarkdownStorage = artifacts.require('MarkdownStorage');
 const AccountStorage = artifacts.require('AccountStorage');
 const PersonStorage = artifacts.require('PersonStorage');
 const PhysicalAddressStorage = artifacts.require('PhysicalAddressStorage');
+const GeopointStorage = artifacts.require('GeopointStorage');
 
 const dtypesMd = require('../data/dtypes_md.json');
 const dtypesAccount = require('../data/dtypes_account.json');
 const dtypesPerson = require('../data/dtypes_person.json');
 const dtypesPhyA = require('../data/dtypes_physicaladdr.json');
+const dtypesGeo = require('../data/dtypes_geo.json');
+
 const mddata = require('../data/md_data.json');
 const accountdata = require('../data/account_data.json');
 const persondata = require('../data/person_data.json');
 const phyadata = require('../data/physicaladdr_data.json');
+const geodata = require('../data/geo_data.json');
 
 module.exports = async function(deployer, network, accounts) {
     const chainId = await web3.eth.net.getId();
@@ -25,6 +29,7 @@ module.exports = async function(deployer, network, accounts) {
     let account = await AccountStorage.deployed();
     let person = await PersonStorage.deployed();
     let phyaddr = await PhysicalAddressStorage.deployed();
+    let geo = await GeopointStorage.deployed();
 
     // Markdown example with alias
     dtypesMd[0].contractAddress = md.address;
@@ -100,5 +105,25 @@ module.exports = async function(deployer, network, accounts) {
           accounts[0],
         );
         await alias.setAlias(dtypehashphy, ...aliasn, hash, signature);
+    }
+
+    // Geopoint example with alias
+    dtypesGeo[0].contractAddress = geo.address;
+    await dtypeContract.insert(dtypesGeo[0], {from: accounts[0]});
+    let dtypehashgeo = await dtypeContract.getTypeHash(0, 'geopoint');
+    const signatureDataGeo = (hash, nonce, name, sep) => UTILS.signatureDataInternal(web3, chainId, Alias.address, dtypehashgeo, hash, nonce, name, sep);
+    for (let i = 0; i < geodata.length; i++) {
+        let data = geodata[i].data;
+        data.latitude = Math.round(10 ** 7 * data.latitude);
+        data.longitude = Math.round(10 ** 7 * data.longitude);
+        await geo.insert(geodata[i].data);
+        let hash = await geo.typeIndex(i);
+        aliasn = geodata[i].alias;
+        aliasn[0] = web3.utils.utf8ToHex(aliasn[0]);
+        signature = await web3.eth.sign(
+          signatureDataGeo(hash, 1, ...aliasn),
+          accounts[0],
+        );
+        await alias.setAlias(dtypehashgeo, ...aliasn, hash, signature);
     }
 };

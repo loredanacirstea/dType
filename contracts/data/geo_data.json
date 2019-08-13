@@ -1,0 +1,50 @@
+[
+  {
+    "data": {
+      "latitude": 48.85341,
+      "longitude": 2.3488,
+      "geonamesid": 2988507
+    },
+    "alias": [".", "Paris"]
+  },
+  {
+    "data": {
+      "latitude": 40.70316,
+      "longitude": -74.0157,
+      "geonamesid": 5108134
+    },
+    "alias": [".", "New York"]
+  },
+  {
+    "data": {
+      "latitude": 35.91667,
+      "longitude": 137.41667,
+      "geonamesid": 1853900
+    },
+    "alias": [".", "Osaka"]
+  },
+  {
+    "data": {
+      "latitude": 52.5,
+      "longitude": 13.41667,
+      "geonamesid": 2950157
+    },
+    "alias": [".", "Berlin"]
+  },
+  {
+    "data": {
+      "latitude": 35.818625,
+      "longitude": 137.307676,
+      "geonamesid": 0
+    },
+    "alias": [".", "alice"]
+  },
+  {
+    "data": {
+      "latitude": 50.127166,
+      "longitude": 8.667488,
+      "geonamesid": 0
+    },
+    "alias": [".", "bob"]
+  }
+]

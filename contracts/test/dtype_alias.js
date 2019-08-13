@@ -16,6 +16,7 @@ contract('alias', async (accounts) => {
       HASH: web3.utils.utf8ToHex('#'),
       SLASH: web3.utils.utf8ToHex('/'),
     }
+    // { DOT: '0x2e', AT: '0x40', HASH: '0x23', SLASH: '0x2f' }
 
     it('deploy', async () => {
         chainId = await web3.eth.net.getId();

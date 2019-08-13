@@ -16,7 +16,7 @@ export const getAliasesFromMd = (text) => {
   return {included, links};
 };
 
-export const replaceAliasesMd = (text, aliases, replacements) => {
+export const replaceAliases = (text, aliases, replacements) => {
   aliases.forEach((match, i) => {
     text = text.replace(match, replacements[i]);
   });
@@ -39,13 +39,13 @@ export const TYPE_PREVIEW = {
   },
 };
 
-export const typePreview = (dtypeName, data) => {
+export const typePreview = (dtypeName, data, alias) => {
+  // console.log('typePreview', dtypeName, data, alias);
   if (!data) return '';
-
-  if (TYPE_PREVIEW[dtypeName]) {
-    return TYPE_PREVIEW[dtypeName](data);
-  }
-  return `\`${JSON.stringify(data)}\``;
+  // if (TYPE_PREVIEW[dtypeName]) {
+  //   return TYPE_PREVIEW[dtypeName](data);
+  // }
+  return `<span>${data}</span>` + aliasBtns(alias);
 };
 
 export const enforceMaxLength = (cm, change) => {
@@ -64,17 +64,28 @@ export const enforceMaxLength = (cm, change) => {
   return true;
 };
 
-export const previewRender = async (plainText, replaceAlias) => {
-  const {included, links} = getAliasesFromMd(plainText);
-
+export const previewRender = async (html, replaceAlias) => {
+  const {included, links} = getAliasesFromMd(html);
+  // console.log('previewRender included, links', included, links);
   // Replace links before included aliases
-  plainText = replaceAliasesMd(
-    plainText,
+  // console.log(included, links, links.aliases.map(link => `<a href="/#/alias?alias=${link}">${link}</a>` + aliasBtns(link)));
+  html = replaceAliases(
+    html,
     links.full,
-    links.aliases.map(link => `[${link}](/#/alias?alias=${link})`),
+    links.aliases.map(link => `<a href="/#/alias?alias=${link}">${link}</a>` + aliasBtns(link)),
   );
   const aliasobjs = await replaceAlias(included.aliases);
-  plainText = replaceAliasesMd(plainText, included.full, aliasobjs);
+  html = replaceAliases(html, included.full, aliasobjs);
 
-  return plainText;
+  return html;
+};
+
+export const aliasBtns = (alias) => {
+  // return `
+  //   <button>Edit</button>
+  // `
+  // console.log('aliasBtns', alias);
+  // return `<button type="button" class="v-btn v-btn--icon theme--light v-size--small" onClick='updateTypeData("${alias}")'><div class="v-btn__content"><i aria-hidden="true" class="v-icon v-icon--link fa fa-edit theme--light"></i></div></button>`;
+
+  return `<button type="button" onClick='updateTypeData("${alias}")' style="padding-right: 5px;padding-left: 5px;"><i aria-hidden="true" class="v-icon v-icon--link fa fa-edit theme--light" style="font-size: 15px;padding-bottom: 5px;"></i></button>`;
 };

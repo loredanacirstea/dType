@@ -1,7 +1,7 @@
 <template>
   <v-layout row wrap>
     <v-flex xs12>
-      <div id='content' class='subheading'></div>
+      <div v-html="innerHtml" class='subheading'></div>
     </v-flex>
   </v-layout>
 </template>
@@ -13,6 +13,8 @@ import {
   TYPE_PREVIEW,
   typePreview,
   previewRender,
+  getAliasesFromMd,
+  replaceAliases,
 } from '../utils.js';
 
 export default {
@@ -23,6 +25,7 @@ export default {
     return {
       tempContent: '',
       aliascontent: {},
+      innerHtml: '',
     };
   },
   mounted() {
@@ -40,8 +43,19 @@ export default {
       this.updatePreview();
     },
     updatePreview() {
-      previewRender(this.tempContent, this.replaceAlias).then((text) => {
-        document.getElementById('content').innerHTML = marked(text);
+      // previewRender(this.tempContent, this.replaceAlias).then((text) => {
+      //   // TODO sanitize html with something like https://github.com/cure53/DOMPurify
+      //   document.getElementById('content').innerHTML = marked(text);
+      // });
+      // FIXME temporary
+      let tempContent = this.tempContent;
+      // const {links} = getAliasesFromMd(tempContent);
+      // tempContent = replaceAliases(tempContent, links.full, links.aliases.map(link => `[[[${link}]]]()`));
+      const innerHtml = marked(tempContent);
+      // TODO each package should provide html for the alias
+      // default is provided by this package
+      previewRender(innerHtml, this.replaceAlias).then((html) => {
+        this.innerHtml = html;
       });
     },
     async replaceAlias(aliases) {
@@ -66,19 +80,45 @@ export default {
 
         // TODO move this in a utility that knows how to handle each type
         const parts = alias.split('.').slice(2);
+        const preview = Object.assign({}, this.aliascontent[alias].content);
+        delete preview.typeHash;
+        const content = JSON.stringify(preview).replace(/","/g, '", "');
+        // TODO fix this - each package needs to implement this
+        if (this.aliascontent[alias].dtypeData.name === 'markdown') {
+          content = marked(preview.content);
+        }
+        if (this.aliascontent[alias].dtypeData.name === 'geopoint') {
+          if (preview.geonamesid) {
+            content = alias.split('.')[1];
+          } else {
+            content = `geopoint:${alias.split('.')[1]}`;
+          }
+        }
+
+        // const {uiPackage, component} = await window.getDynamicPackageInternal(
+        //   this.aliascontent[alias].dtypeData.name,
+        //   'simplehtml',
+        // );
+        // const content = component;
+
         const parsed = typePreview(
           this.aliascontent[alias].dtypeData.name,
-          this.aliascontent[alias].content,
+          content,
+          alias,
         );
 
         if (parts.length === 0) {
           aliasobjs.push(parsed);
         } else {
           let replacement = Object.assign({}, this.aliascontent[alias].content);
+          // console.log('replacement', replacement);
           for (let j = 0; j < parts.length; j++) {
             if (replacement) replacement = replacement[parts[j]];
           }
-          aliasobjs.push(replacement);
+          // console.log('replaceAlias typePreview: replacement, alias', replacement, alias);
+          const ssssss = typePreview(this.aliascontent[alias].dtypeData.name, replacement, alias);
+          // console.log('ssssss', ssssss);
+          aliasobjs.push(ssssss);
         }
       }
       return aliasobjs;

@@ -10,6 +10,8 @@ const PersonLib = artifacts.require('PersonLib');
 const PersonStorage = artifacts.require('PersonStorage');
 const PhysicalAddressLib = artifacts.require('PhysicalAddressLib');
 const PhysicalAddressStorage = artifacts.require('PhysicalAddressStorage');
+const GeopointLib = artifacts.require('GeopointLib');
+const GeopointStorage = artifacts.require('GeopointStorage');
 
 module.exports = async function(deployer, network, accounts) {
     const chainId = await web3.eth.net.getId();
@@ -31,4 +33,8 @@ module.exports = async function(deployer, network, accounts) {
     await deployer.deploy(PhysicalAddressLib);
     await deployer.link(PhysicalAddressLib, PhysicalAddressStorage);
     await deployer.deploy(PhysicalAddressStorage);
+
+    await deployer.deploy(GeopointLib);
+    await deployer.link(GeopointLib, GeopointStorage);
+    await deployer.deploy(GeopointStorage);
 };

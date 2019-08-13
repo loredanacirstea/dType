@@ -13,6 +13,7 @@
     "@dtype/default-ui": "file:../packages/dtype-default-ui",
     "@dtype/markdown-ui": "file:../packages/dtype-markdown-ui",
     "@dtype/navigation-ui": "file:../packages/dtype-navigation-ui",
+    "@dtype/geopoint-ui": "file:../packages/dtype-geopoint-ui",
     "vue": "^2.6.6",
     "vue-router": "^3.0.2",
     "vuetify": "^1.5.5",
